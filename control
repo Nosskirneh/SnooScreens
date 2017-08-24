@@ -1,7 +1,7 @@
 Package: se.nosskirneh.snooscreens
 Name: SnooScreens
 Depends: mobilesubstrate, libactivator
-Version: 1.1
+Version: 1.2
 Architecture: iphoneos-arm
 Description: Set your wallpaper to an image from a subreddit!
 Maintainer: Andreas Henriksson
