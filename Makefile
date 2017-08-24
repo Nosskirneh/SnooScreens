@@ -13,7 +13,7 @@ after-stage::
 	$(ECHO_NOTHING)find $(FW_STAGING_DIR) -iname '*.png' -exec pincrush -i {} \;$(ECHO_END)
 
 after-install::
-	install.exec "killall -9 SpringBoard"
+	install.exec "killall SpringBoard"
 
 SUBPROJECTS += preferences
 include $(THEOS_MAKE_PATH)/aggregate.mk

@@ -206,6 +206,7 @@ NSString *tweakName = @"SnooScreens";
     for (int i = index; i <= count; i++) {
         NSArray *keys = @[ @"-subreddit",
                            @"-wallpaperMode",
+                           @"-onlyWiFi",
                            @"-allowBoobies",
                            @"-savePhoto",
                            @"-random" ];
@@ -297,11 +298,9 @@ NSString *tweakName = @"SnooScreens";
 
 - (id)specifiers {
     if (_specifiers == nil) {
-        //HBLogDebug(@"[SnooScreens] We got called!");
         NSMutableArray *specifiers = [[NSMutableArray alloc] init];
         NSString *methodName = [NSString stringWithFormat:@"sub%d", subNumber];
 
-        //HBLogDebug(@"Creating first specifier");
         NSArray *suggestions = [NSArray arrayWithObjects:@"Need a suggestion? How about /r/EarthPorn?",
                                                          @"Here's a tip: I support mulitreddits! Try /user/CastleCorp/m/find_me_wallpapers",
                                                          @"Can't think of a subreddit? Why not /r/wallpaper?",
@@ -314,7 +313,6 @@ NSString *tweakName = @"SnooScreens";
                                                            footer:[suggestions objectAtIndex:randomIndex]];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating second specifier");
         PSTextFieldSpecifier *textSpec = [PSTextFieldSpecifier preferenceSpecifierNamed:@"Subreddit"
                                                                                 target:self
                                                                                    set:@selector(setPreferenceValue:specifier:)
@@ -339,14 +337,22 @@ NSString *tweakName = @"SnooScreens";
         [spec setProperty:@YES forKey:@"default"];
         [specifiers addObject:spec];
 
+        spec = [PSSpecifier preferenceSpecifierNamed:@"Only on WiFi"
+                                              target:self
+                                                 set:@selector(setPreferenceValue:specifier:)
+                                                 get:@selector(readPreferenceValue:)
+                                              detail:Nil
+                                                cell:PSSwitchCell
+                                                edit:Nil];
+        [spec setProperty:[NSString stringWithFormat:@"%@-onlyWiFi", methodName] forKey:@"key"];
+        [spec setProperty:@YES forKey:@"default"];
+        [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating third specifier");
         spec = [PSSpecifier emptyGroupSpecifier];
         [spec setProperty:@"Pick an activation method for this subreddit." forKey:@"footerText"];
         [spec setProperty:@"PSGroupCell" forKey:@"cell"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating fourth specifier");
         spec = [PSSpecifier preferenceSpecifierNamed:@"Activation Method"
                                               target:self
                                                  set:NULL
@@ -360,13 +366,11 @@ NSString *tweakName = @"SnooScreens";
         spec->action = @selector(lazyLoadBundle:);
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating fifth specifier");
         spec = [PSSpecifier emptyGroupSpecifier];
         [spec setProperty:@"Apply to home screen, lock screen, or both." forKey:@"footerText"];
         [spec setProperty:@"PSGroupCell" forKey:@"cell"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating sixth specifier");
         spec = [PSSpecifier preferenceSpecifierNamed:@"Set to"
                                               target:self
                                                  set:@selector(setPreferenceValue:specifier:)
@@ -377,17 +381,14 @@ NSString *tweakName = @"SnooScreens";
         [spec setProperty:[NSString stringWithFormat:@"%@-wallpaperMode", methodName] forKey:@"key"];
         [spec setProperty:NSStringFromSelector(@selector(titlesDataSource)) forKey:@"titlesDataSource"];
         [spec setProperty:NSStringFromSelector(@selector(valuesDataSource)) forKey:@"valuesDataSource"];
-        //spec->_values = [NSArray arrayWithObjects:@"1", @"2", @"0", nil];
         [spec setProperty:@"0" forKey:@"default"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating seventh specifier");
         spec = [PSSpecifier emptyGroupSpecifier];
         [spec setProperty:@"Allow NSFW images to be saved & set as your wallpaper." forKey:@"footerText"];
         [spec setProperty:@"PSGroupCell" forKey:@"cell"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating eighth specifier");
         spec = [PSSpecifier preferenceSpecifierNamed:@"Allow NSFW images"
                                               target:self
                                                  set:@selector(setPreferenceValue:specifier:)
@@ -399,13 +400,11 @@ NSString *tweakName = @"SnooScreens";
         [spec setProperty:@NO forKey:@"default"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating ninth specifier");
         spec = [PSSpecifier emptyGroupSpecifier];
         [spec setProperty:@"Save the photo to your photo library after setting it as your wallpaper." forKey:@"footerText"];
         [spec setProperty:@"PSGroupCell" forKey:@"cell"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating tenth specifier");
         spec = [PSSpecifier preferenceSpecifierNamed:@"Save photo"
                                               target:self
                                                  set:@selector(setPreferenceValue:specifier:)
@@ -417,13 +416,11 @@ NSString *tweakName = @"SnooScreens";
         [spec setProperty:@NO forKey:@"default"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating eleventh specifier");
         spec = [PSSpecifier emptyGroupSpecifier];
         [spec setProperty:@"Use a random image. If this is disabled, the top image will be grabbed." forKey:@"footerText"];
         [spec setProperty:@"PSGroupCell" forKey:@"cell"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating twelfth specifier");
         spec = [PSSpecifier preferenceSpecifierNamed:@"Random image"
                                               target:self
                                                  set:@selector(setPreferenceValue:specifier:)
@@ -435,10 +432,8 @@ NSString *tweakName = @"SnooScreens";
         [spec setProperty:@NO forKey:@"default"];
         [specifiers addObject:spec];
 
-        //HBLogDebug(@"Creating _specifiers");
         _specifiers = [[specifiers copy] retain];
     }
-    //HBLogDebug(@"returning _specifiers");
     return _specifiers;
 }
 

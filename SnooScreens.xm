@@ -6,6 +6,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <substrate.h>
 #import "include/UIAlertController.h"
+#import <SpringBoard/SBWiFiManager.h>
 
 @interface SnooScreens : NSObject<LAListener> {
     int listenerCount;
@@ -22,9 +23,7 @@ static NSString *const tweakName = @"SnooScreens";
 
 
 static inline int FPWListenerName(NSString *listenerName) {
-    int en;
-    en = [[listenerName substringFromIndex:31] intValue];
-    return en;
+    return [[listenerName substringFromIndex:29] intValue];
 }
 
 @implementation SnooScreens
@@ -47,6 +46,15 @@ static inline int FPWListenerName(NSString *listenerName) {
         NSNumber *obj = [prefs objectForKey:[NSString stringWithFormat:@"%@enabled", mode]];
         BOOL enabled = obj ? [obj boolValue] : YES;
         if (!enabled) {
+            [event setHandled:NO];
+            return;
+        }
+
+        // Check WiFi setting and state
+        obj = [prefs objectForKey:[NSString stringWithFormat:@"%@onlyWiFi", mode]];
+        BOOL onlyWiFi = obj ? [obj boolValue] : YES;
+        if (onlyWiFi && ![[%c(SBWiFiManager) sharedInstance] currentNetworkName]) {
+            //HBLogDebug(@"No WiFi connection");
             [event setHandled:NO];
             return;
         }
