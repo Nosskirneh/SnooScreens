@@ -91,7 +91,7 @@ static inline int FPWListenerName(NSString *listenerName) {
         NSError *jsonError = nil;
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&jsonError];
         if (jsonError) {
-            //HBLogDebug(@"[%@] JSON Error: %@", tweakName, jsonError);
+            //HBLogDebug(@"JSON Error: %@", jsonError);
             return;
         }
 
@@ -193,7 +193,7 @@ static inline int FPWListenerName(NSString *listenerName) {
                                              returningResponse:nil
                                                          error:&imageError];
         if (imageError) {
-            //HBLogDebug(@"[%@] Error downloading image: %@", tweakName, imageError);
+            //HBLogDebug(@"Error downloading image: %@", imageError);
             UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"%@", tweakName]
                                                                                      message:[NSString stringWithFormat:@"There was an error downloading the image %@ from imgur. Perhaps imgur is blocked on your Internet connection? %@.", url, subreddit]
                                                                               preferredStyle:UIAlertControllerStyleAlert];
