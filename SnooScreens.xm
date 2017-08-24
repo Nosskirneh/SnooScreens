@@ -2,15 +2,14 @@
 #import <SpringBoard/SpringBoard.h>
 #import <SpringBoardFoundation/SBFWallpaperParallaxSettings.h>
 #import <UIKit/UIKit.h>
-#import "/usr/include/objc/runtime.h"
 #import <libactivator/libactivator.h>
 #import <AssetsLibrary/AssetsLibrary.h>
-#define DEBUG
-#import "DebugLog.h"
+#import <substrate.h>
+#import "include/UIAlertController.h"
 
-@interface SnooScreens : NSObject<LAListener>{
+@interface SnooScreens : NSObject<LAListener> {
     int listenerCount;
-    PLWallpaperMode wallpaperMode;
+    int wallpaperMode;
     NSString *imgurLink;
     BOOL isNSFW;
 }
@@ -18,11 +17,8 @@
 
 SnooScreens *listener;
 
-static NSString *const settingsPath = @"/var/mobile/Library/Preferences/com.milodarling.snooscreens.plist";
+static NSString *const settingsPath = @"/var/mobile/Library/Preferences/se.nosskirneh.snooscreens.plist";
 static NSString *const tweakName = @"SnooScreens";
-//static NSDictionary *prefs;
-
-
 
 
 static inline int FPWListenerName(NSString *listenerName) {
@@ -33,18 +29,19 @@ static inline int FPWListenerName(NSString *listenerName) {
 
 @implementation SnooScreens
 
--(id)init {
-    if (self=[super init]) {
+- (id)init {
+    if (self = [super init]) {
         listenerCount = 0;
         [self updateListeners];
     }
     return self;
 }
 
--(void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName {
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-         NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:settingsPath];
-        //COLLECT PREFERENCES ETC
+        NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:settingsPath];
+
+        // Collect preferences etc
         int en = FPWListenerName(listenerName);
         NSString *mode = [NSString stringWithFormat:@"sub%d-", en];
         NSNumber *obj = [prefs objectForKey:[NSString stringWithFormat:@"%@enabled", mode]];
@@ -53,51 +50,60 @@ static inline int FPWListenerName(NSString *listenerName) {
             [event setHandled:NO];
             return;
         }
+
         [event setHandled:YES];
         NSString *subreddit = [prefs objectForKey:[NSString stringWithFormat:@"%@subreddit", mode]] ?: @"No subreddit chosen";
         BOOL allowBoobies = [[prefs objectForKey:[NSString stringWithFormat:@"%@allowBoobies", mode]] boolValue];
         wallpaperMode = [[prefs objectForKey:[NSString stringWithFormat:@"%@wallpaperMode", mode]] intValue] ?: 0;
-    
-        //PARSE URL
+
+        // Parse URL
         subreddit = [subreddit stringByReplacingOccurrencesOfString:@" " withString:@""];
-        DebugLogC(@"Subreddit: %@", subreddit);
+        //HBLogDebug(@"Subreddit: %@", subreddit);
         NSURL *blogURL = [NSURL URLWithString:[NSString stringWithFormat:@"https://www.reddit.com%@.json", subreddit]];
         NSError *jsonDataError = nil;
         NSData *jsonData = [NSURLConnection sendSynchronousRequest:[NSURLRequest requestWithURL:blogURL] returningResponse:nil error:&jsonDataError];
+
         if (jsonDataError) {
-            DebugLogC(@"Error downloading json data: %@", jsonDataError);
-            UIAlertView *alert1 = [[UIAlertView alloc] initWithTitle:@"SnooScreens"
-                                                             message:@"We couldn't get the image :(. Perhaps you've typed in a subreddit incorrectly, or you're not connected to the internet?"
-                                                            delegate:self
-                                                   cancelButtonTitle:@"Ok"
-                                                   otherButtonTitles:nil];
-            [alert1 performSelector:@selector(show)
-                           onThread:[NSThread mainThread]
-                         withObject:nil
-                      waitUntilDone:NO];
-            [alert1 release];
+            //HBLogDebug(@"Error downloading json data: %@", jsonDataError);
+            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"%@", tweakName]
+                                                                                     message:@"We couldn't get the image :(. Perhaps you've typed in a subreddit incorrectly, or you're not connected to the internet?"
+                                                                              preferredStyle:UIAlertControllerStyleAlert];
+
+            [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleCancel 
+                                                      handler:^(UIAlertAction * _Nonnull action) {
+               [alertController dismissViewControllerAnimated:YES completion:nil];
+            }]];
+
+            [alertController show];
+            [alertController release];
             return;
         }
+
         NSError *jsonError = nil;
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&jsonError];
         if (jsonError) {
-            NSLog(@"[%@] JSON Error: %@", tweakName, jsonError);
+            //HBLogDebug(@"[%@] JSON Error: %@", tweakName, jsonError);
             return;
         }
+
         int arrayLength = [json[@"data"][@"children"] count];
         if (arrayLength == 0) {
-            UIAlertView *noSubredditAlert = [[UIAlertView alloc] initWithTitle:@"SnooScreens"
-                                                             message:@"It appears the subreddit you've entered doesn't exist."
-                                                            delegate:self
-                                                   cancelButtonTitle:@"Ok"
-                                                   otherButtonTitles:nil];
-            [noSubredditAlert performSelector:@selector(show)
-                           onThread:[NSThread mainThread]
-                         withObject:nil
-                      waitUntilDone:NO];
+            UIAlertController *noSubredditAlert = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"%@", tweakName]
+                                                                                      message:@"It appears the subreddit you've entered doesn't exist."
+                                                                               preferredStyle:UIAlertControllerStyleAlert];
+
+            [noSubredditAlert addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleCancel 
+                                                      handler:^(UIAlertAction * _Nonnull action) {
+               [noSubredditAlert dismissViewControllerAnimated:YES completion:nil];
+            }]];
+
+            [noSubredditAlert show];
             [noSubredditAlert release];
             return;
         }
+
         if ([[prefs objectForKey:[NSString stringWithFormat:@"%@random", mode]] boolValue]) {
             NSMutableArray *badNumbers = [[NSMutableArray alloc] init];
             int count = 0;
@@ -107,45 +113,59 @@ static inline int FPWListenerName(NSString *listenerName) {
                 if ([badNumbers containsObject:iInIDForm]) {
                     continue;
                 }
+
                 imgurLink = json[@"data"][@"children"][i][@"data"][@"url"];
                 isNSFW = [json[@"data"][@"children"][i][@"data"][@"over_18"] boolValue];
                 [badNumbers addObject:iInIDForm];
                 count++;
-            } while (!(([imgurLink rangeOfString:@"imgur.com"].location != NSNotFound) && ([imgurLink rangeOfString:@"/a/"].location == NSNotFound) && (!isNSFW || allowBoobies) && ![[prefs objectForKey:@"currentRedditLink"] isEqualToString:imgurLink]) && count<arrayLength);
+            } while (!(([imgurLink rangeOfString:@"imgur.com"].location != NSNotFound) &&
+                ([imgurLink rangeOfString:@"/a/"].location == NSNotFound) &&
+                (!isNSFW || allowBoobies) &&
+                ![[prefs objectForKey:@"currentRedditLink"] isEqualToString:imgurLink]) &&
+                count<arrayLength);
             [badNumbers release];
         } else {
             for (int i=0; i<arrayLength; i++) {
                 imgurLink = json[@"data"][@"children"][i][@"data"][@"url"];
                 isNSFW = [json[@"data"][@"children"][i][@"data"][@"over_18"] boolValue];
-                if (([imgurLink rangeOfString:@"imgur.com"].location != NSNotFound) && ([imgurLink rangeOfString:@"/a/"].location == NSNotFound) && (!isNSFW || allowBoobies) && ![[prefs objectForKey:@"currentRedditLink"] isEqualToString:imgurLink]) {
+                if (([imgurLink rangeOfString:@"imgur.com"].location != NSNotFound) &&
+                    ([imgurLink rangeOfString:@"/a/"].location == NSNotFound) &&
+                    (!isNSFW || allowBoobies) &&
+                    ![[prefs objectForKey:@"currentRedditLink"] isEqualToString:imgurLink]) {
                     break;
                 }
             }
         }
-    
-        if (!(([imgurLink rangeOfString:@"imgur.com"].location != NSNotFound) && ([imgurLink rangeOfString:@"/a/"].location == NSNotFound) && (!isNSFW || allowBoobies))) {
-            UIAlertView *alert2 = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"%@", tweakName]
-                                                             message:[NSString stringWithFormat:@"I didn't find any images that meet your criteria on the front page of %@.", subreddit]
-                                                            delegate:self
-                                                   cancelButtonTitle:@"Ok"
-                                                   otherButtonTitles:nil];
-            [alert2 performSelector:@selector(show)
-                           onThread:[NSThread mainThread]
-                         withObject:nil
-                      waitUntilDone:NO];
-            [alert2 release];
+
+        if (!(([imgurLink rangeOfString:@"imgur.com"].location != NSNotFound) &&
+            ([imgurLink rangeOfString:@"/a/"].location == NSNotFound) &&
+            (!isNSFW || allowBoobies))) {
+            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"%@", tweakName]
+                                                                                     message:[NSString stringWithFormat:@"I didn't find any images that meet your criteria on the front page of %@.", subreddit]
+                                                                              preferredStyle:UIAlertControllerStyleAlert];
+
+            [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleCancel 
+                                                      handler:^(UIAlertAction * _Nonnull action) {
+               [alertController dismissViewControllerAnimated:YES completion:nil];
+            }]];
+
+            [alertController show];
+            [alertController release];
             return;
         }
-        //save as a preference so we don't reuse the same image.
+
+        // Save as a preference so we don't reuse the same image.
         [self setPreferenceObject:imgurLink forKey:@"currentRedditLink"];
-        DebugLogC(@"Final link: %@", [prefs objectForKey:@"currentRedditLink"]);
-        
-        //Convert imgur.com links to i.imgur.com
+        //HBLogDebug(@"Final link: %@", [prefs objectForKey:@"currentRedditLink"]);
+
+        // Convert imgur.com links to i.imgur.com
         NSString *finalLink = @"";
         if ([imgurLink rangeOfString:@"i.imgur.com"].location == NSNotFound) {
-            for (int i=0; i<[imgurLink length]; i++) {
+            for (int i = 0; i < [imgurLink length]; i++) {
                 finalLink = [NSString stringWithFormat:@"%@%c", finalLink, [imgurLink characterAtIndex:i]];
-                if ([imgurLink characterAtIndex:i] == '/' && [imgurLink characterAtIndex:i-1] == '/') {
+                if ([imgurLink characterAtIndex:i] == '/' &&
+                    [imgurLink characterAtIndex:i - 1] == '/') {
                     finalLink = [NSString stringWithFormat:@"%@i.", finalLink];
                 }
             }
@@ -153,68 +173,67 @@ static inline int FPWListenerName(NSString *listenerName) {
         } else {
             finalLink = imgurLink;
         }
-        DebugLogC(@"Link: %@", finalLink);
+
+        //HBLogDebug(@"Link: %@", finalLink);
         NSURL *url = [NSURL URLWithString:finalLink];
-        DebugLogC(@"URL: %@", url);
+        //HBLogDebug(@"URL: %@", url);
         [self setPreferenceObject:finalLink forKey:@"currentWallpaper"];
-        //DOWNLOAD IMAGE
+
+        // Download image
         NSError *imageError = nil;
-        NSData *data = [NSURLConnection sendSynchronousRequest:[NSURLRequest requestWithURL:url] returningResponse:nil error:&imageError];
+        NSData *data = [NSURLConnection sendSynchronousRequest:[NSURLRequest requestWithURL:url]
+                                             returningResponse:nil
+                                                         error:&imageError];
         if (imageError) {
-            NSLog(@"[%@] Error downloading image: %@", tweakName, imageError);
-            UIAlertView *alert3 = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"%@", tweakName]
-                                                             message:[NSString stringWithFormat:@"There was an error downloading the image %@ from imgur. Perhaps imgur is blocked on your Internet connection? %@.", url, subreddit]
-                                                            delegate:self
-                                                   cancelButtonTitle:@"Ok"
-                                                   otherButtonTitles:nil];
-            [alert3 performSelector:@selector(show)
-                           onThread:[NSThread mainThread]
-                         withObject:nil
-                      waitUntilDone:NO];
-            [alert3 release];
+            //HBLogDebug(@"[%@] Error downloading image: %@", tweakName, imageError);
+            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:[NSString stringWithFormat:@"%@", tweakName]
+                                                                                     message:[NSString stringWithFormat:@"There was an error downloading the image %@ from imgur. Perhaps imgur is blocked on your Internet connection? %@.", url, subreddit]
+                                                                              preferredStyle:UIAlertControllerStyleAlert];
+
+            [alertController addAction:[UIAlertAction actionWithTitle:@"OK"
+                                                      style:UIAlertActionStyleCancel 
+                                                      handler:^(UIAlertAction * _Nonnull action) {
+               [alertController dismissViewControllerAnimated:YES completion:nil];
+            }]];
+
+            [alertController show];
+            [alertController release];
         }
         UIImage *rawImage = [UIImage imageWithData:data];
-    
-        //CROP IMAGE
+
+        // Crop image
         CGSize screenSize = [SBFWallpaperParallaxSettings minimumWallpaperSizeForCurrentDevice];
         float ratio = screenSize.height/screenSize.width;
-    
+
         CGRect rect;
         if ((rawImage.size.height/rawImage.size.width)>ratio) {
             rect = CGRectMake(0.0f,
-                              (rawImage.size.height - rawImage.size.width*ratio) * 0.5f,
+                              (rawImage.size.height - rawImage.size.width * ratio) * 0.5f,
                               rawImage.size.width,
-                              rawImage.size.width*ratio);
+                              rawImage.size.width * ratio);
         } else {
-            rect = CGRectMake((rawImage.size.width - rawImage.size.height/ratio) * 0.5f,
+            rect = CGRectMake((rawImage.size.width - rawImage.size.height / ratio) * 0.5f,
                               0.0f,
-                              (rawImage.size.height/ratio),
+                              (rawImage.size.height / ratio),
                               rawImage.size.height);
         }
-    
+
         CGImageRef imageRef = CGImageCreateWithImageInRect([rawImage CGImage], rect);
         UIImage *image = [[[UIImage alloc] initWithCGImage:imageRef] autorelease];
         CGImageRelease(imageRef);
-    
-        //SET WALLPAPER
-        NSLog(@"[SnooScreens] Setting wallpaper");
+
+        // Set wallpaper
         PLStaticWallpaperImageViewController *wallpaperViewController = [[[PLStaticWallpaperImageViewController alloc] initWithUIImage:image] autorelease];
         wallpaperViewController.saveWallpaperData = YES;
-        
-        uintptr_t address = (uintptr_t)&wallpaperMode;
-        object_setInstanceVariable(wallpaperViewController, "_wallpaperMode", *(PLWallpaperMode **)address);
-        
+
+        MSHookIvar<int>(wallpaperViewController, "_wallpaperMode") = wallpaperMode;
+
         [wallpaperViewController _savePhoto];
-        
+
         if ([[prefs objectForKey:[NSString stringWithFormat:@"%@savePhoto", mode]] boolValue]) {
             UIImageWriteToSavedPhotosAlbum(rawImage, nil, nil, nil);
         }
-        //NSLog(@"[%@] Releasing image :)", tweakName);
-        //[image release];
-        
-        //isRunning = NO;
-        
-        //completion(nil);
+
         [self loadPrefs];
     });
     
@@ -240,7 +259,7 @@ static inline int FPWListenerName(NSString *listenerName) {
 }
 
 - (NSArray *)activator:(LAActivator *)activator requiresExclusiveAssignmentGroupsForListenerName:(NSString *)listenerName {
-    return [NSArray arrayWithObjects:nil];
+    return @[];
 }
 
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale {
@@ -251,27 +270,28 @@ static inline int FPWListenerName(NSString *listenerName) {
     }
 }
 
--(void)setPreferenceObject:(id)object forKey:(NSString *)key {
+- (void)setPreferenceObject:(id)object forKey:(NSString *)key {
     NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithContentsOfFile:settingsPath];
     [dict setObject:object forKey:key];
     [dict writeToFile:settingsPath atomically:YES];
 }
 
--(void)updateListeners {
+- (void)updateListeners {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     if (listenerCount) {
-        for (int i=1; i<=listenerCount; i++) {
-            [[LAActivator sharedInstance] unregisterListenerWithName:[NSString stringWithFormat:@"com.milodarling.snooscreens.sub%d", i]];
+        for (int i = 1; i <= listenerCount; i++) {
+            [[LAActivator sharedInstance] unregisterListenerWithName:[NSString stringWithFormat:@"se.nosskirneh.snooscreens.sub%d", i]];
         }
     }
-    [self loadPrefs]; //gets new count value
-    for (int i=1; i<=listenerCount; i++) {
-        [[LAActivator sharedInstance] registerListener:self forName:[NSString stringWithFormat:@"com.milodarling.snooscreens.sub%d", i]];
+
+    [self loadPrefs]; // gets new count value
+    for (int i = 1; i <= listenerCount; i++) {
+        [[LAActivator sharedInstance] registerListener:self forName:[NSString stringWithFormat:@"se.nosskirneh.snooscreens.sub%d", i]];
     }
     [pool drain];
 }
 
--(void)loadPrefs {
+- (void)loadPrefs {
     NSDictionary *prefs = [NSDictionary dictionaryWithContentsOfFile:settingsPath];
     listenerCount = [[prefs objectForKey:@"count"] intValue];
 }
@@ -291,13 +311,13 @@ static void updateListeners() {
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     NULL,
                                     (CFNotificationCallback)loadPreferences,
-                                    CFSTR("com.milodarling.snooscreens/prefsChanged"),
+                                    CFSTR("se.nosskirneh.snooscreens/prefsChanged"),
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
                                     NULL,
                                     (CFNotificationCallback)updateListeners,
-                                    CFSTR("com.milodarling.snooscreens/updateListeners"),
+                                    CFSTR("se.nosskirneh.snooscreens/updateListeners"),
                                     NULL,
                                     CFNotificationSuspensionBehaviorDeliverImmediately);
 }

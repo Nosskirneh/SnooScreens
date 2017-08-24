@@ -1,10 +1,10 @@
-Package: org.thebigboss.snooscreens
+Package: se.nosskirneh.snooscreens
 Name: SnooScreens
 Depends: mobilesubstrate, libactivator
 Version: 1.1
 Architecture: iphoneos-arm
 Description: Set your wallpaper to an image from a subreddit!
-Maintainer: Milo Darling
+Maintainer: Andreas Henriksson
 Author: Milo Darling
 Section: Tweaks
 Icon: file:///Library/PreferenceBundles/SnooScreens.bundle/SnooScreens@3x.png

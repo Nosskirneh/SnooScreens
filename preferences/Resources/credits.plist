@@ -102,24 +102,6 @@
 			<key>icon</key>
 			<string>alex.png</string>
 		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>footerText</key>
-			<string>Make the preference bundle header Comic Sans. Just for you, DomT4 &lt;3</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<false/>
-			<key>defaults</key>
-			<string>com.milodarling.snooscreens</string>
-			<key>key</key>
-			<string>comicsans</string>
-			<key>label</key>
-			<string>Comic Sans</string>
-		</dict>
 	</array>
 	<key>title</key>
 	<string>More</string>

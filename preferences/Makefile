@@ -1,11 +1,7 @@
-GO_EASY_ON_ME = 1
-ARCHS = armv7 arm64
-TARGET = iphone:clang:latest:latest
-
-include theos/makefiles/common.mk
+include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = SnooScreens
-SnooScreens_FILES = SnooScreens.mm
+SnooScreens_FILES = Preferences.mm
 SnooScreens_INSTALL_PATH = /Library/PreferenceBundles
 SnooScreens_FRAMEWORKS = UIKit Social
 SnooScreens_PRIVATE_FRAMEWORKS = Preferences
